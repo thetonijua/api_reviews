@@ -1,0 +1,14 @@
+# Entornos virtuales de Python
+.venv/
+venv/
+env/
+
+# Archivos de caché
+__pycache__/
+*.pyc
+
+# Archivos de datos generados (¡Importante!)
+*.csv
+resenas_casino.csv
+
+.env
