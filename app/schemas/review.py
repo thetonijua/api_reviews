@@ -10,7 +10,7 @@ class ResenaBase(BaseModel):
     calificacion: float
     fecha: str
     comentario: Optional[str] = None
-    likes: int = 0
+    me_gusta:int = 0
     respuesta_dueno: Optional[str] = None
 
 class ResenaCreate(ResenaBase):

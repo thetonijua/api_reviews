@@ -1,37 +1,71 @@
 import csv
-from app.core.database import SessionLocal 
-from app.models import review 
+from app.core.database import SessionLocal
+from app.models.review import Empresa, Resena
 
-def load_csv_bd():
+def cargar_datos():
+   
     db = SessionLocal()
     
     try:
-        with open('resenas_casino.csv', mode='r', encoding='utf-8') as archivo:
-            lector = csv.reader(archivo)
-            next(lector) 
+        print("⏳ Iniciando la carga de datos (ETL)...")
+        
+        with open('resenas_benchmarking.csv', mode='r', encoding='utf-8') as archivo:
+            # DictReader convierte la primera fila del CSV en las llaves del diccionario
+            lector = csv.DictReader(archivo)
             
-            registros_a_insertar = []
+            contador_resenas = 0
             
             for fila in lector:
-                nueva_resena = review.Review(
-                    calificacion=float(fila[0][:1]),
-                    fecha_publicacion=fila[1],
-                    texto=fila[2],
-                    plataforma="Google maps"
-
+                nombre_empresa = fila['Empresa']
+                
+    
+                empresa_db = db.query(Empresa).filter(Empresa.nombre == nombre_empresa).first()
+                
+                if not empresa_db:
+                    print(f"🏢 Registrando nueva empresa en la BD: {nombre_empresa}")
+                    empresa_db = Empresa(nombre=nombre_empresa)
+                    db.add(empresa_db)
+                    db.commit()
+                    db.refresh(empresa_db)
+                
+                # --- Transformación ---
+                # A: Arreglar las estrellas (de "4,5 estrellas" a 4.5)
+                estrellas_str = fila['Estrellas'].replace(',', '.').split()[0]
+                try:
+                    calificacion = float(estrellas_str)
+                except ValueError:
+                    calificacion = 0.0 # Por si dice "Sin estrellas"
+                    
+                # B: Convertir strings a sus tipos correctos
+                es_local_guide = True if fila['Local_Guide'] == 'True' else False
+                me_gusta = int(fila['Me_Gusta']) if fila['Me_Gusta'].isdigit() else 0
+                
+            
+                nueva_resena = Resena(
+                    empresa_id=empresa_db.id,
+                    autor=fila['Autor'],
+                    es_local_guide=es_local_guide,
+                    calificacion=calificacion,
+                    fecha=fila['Fecha'],
+                    comentario=fila['Comentario'],
+                    me_gusta=me_gusta,
+                    respuesta_dueno=fila['Respuesta_Dueno']
                 )
-                registros_a_insertar.append(nueva_resena)
+                
+                db.add(nueva_resena)
+                contador_resenas += 1
             
-            db.add_all(registros_a_insertar)
+            # --- Carga ---
             db.commit()
+            print(f"✅ ¡Éxito! Se cargaron {contador_resenas} reseñas en MySQL.")
             
-            print(f"✅ ¡Éxito! Se insertaron {len(registros_a_insertar)} reseñas.")
-            
+    except FileNotFoundError:
+        print("❌ Error: No se encontró el archivo 'resenas_benchmarking.csv'. Corre el scraper primero.")
     except Exception as e:
-        db.rollback()
-        print(f"Error: {e}")
+        db.rollback() # Si algo falla, deshacemos los cambios para no corromper la BD
+        print(f"❌ Ocurrió un error inesperado durante la carga: {e}")
     finally:
-        db.close()
+        db.close() # Siempre cerramos la conexión
 
 if __name__ == "__main__":
-    load_csv_bd()
+    cargar_datos()
