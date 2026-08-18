@@ -6,7 +6,6 @@ import os
 load_dotenv()  
 
 DATABASE_URL = os.getenv("SQLALCHEMY_DATABASE_URL")
-print(f"Conectando a la base de datos en: {DATABASE_URL}")
 
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

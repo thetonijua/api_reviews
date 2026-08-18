@@ -1,21 +1,43 @@
-from pydantic import BaseModel, Field
-from datetime import datetime
-from typing import Optional
+from pydantic import BaseModel, ConfigDict
+from typing import Optional, List
 
-# 1. El molde base con los datos comunes
-class ReviewBase(BaseModel):
-    plataforma: str = Field(..., description="Origen del dato (Google Maps, TripAdvisor, etc.)")
-    autor: Optional[str] = Field(None, description="Autor de la reseña")
-    calificacion: float = Field(..., ge=1, le=5, description="Nota del 1 al 5")
-    texto: str
-    fecha_publicacion: str
 
-# 2. Molde para RECIBIR datos (cuando el scraper envía una nueva reseña)
-class ReviewCreate(ReviewBase):
-    pass # No añadimos nada extra, usa exactamente lo del Base
 
-# 3. Molde para DEVOLVER datos (cuando tu frontend pida ver las reseñas)
-class ReviewResponse(ReviewBase):
-    id: int # Le agregamos un ID porque al devolverlo ya estará guardado en la BD
-    class Config:
-        from_attributes = True 
+class ResenaBase(BaseModel):
+    plataforma: str = "Google Maps"
+    autor: Optional[str] = None
+    es_local_guide: bool = False
+    calificacion: float
+    fecha: str
+    comentario: Optional[str] = None
+    likes: int = 0
+    respuesta_dueno: Optional[str] = None
+
+class ResenaCreate(ResenaBase):
+    empresa_id: int # Obligatorio al crear, para saber a quién pertenece
+
+class ResenaResponse(ResenaBase):
+    id: int
+    empresa_id: int
+
+    # Esto le dice a Pydantic que lea los datos desde SQLAlchemy (modo ORM)
+    model_config = ConfigDict(from_attributes=True)
+
+# ==========================================
+# SCHEMAS PARA EMPRESAS
+# ==========================================
+
+class EmpresaBase(BaseModel):
+    nombre: str
+    sector: Optional[str] = None
+    es_cliente: bool = False
+
+class EmpresaCreate(EmpresaBase):
+    pass
+
+
+class EmpresaResponse(EmpresaBase):
+    id: int
+    resenas: List[ResenaResponse] = []
+
+    model_config = ConfigDict(from_attributes=True)
