@@ -1,12 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from sqlalchemy import func
+from sqlalchemy import func, case
 
 # Importamos la conexión a BD y nuestros modelos/esquemas actualizados
 from app.core.database import get_db
-from crecebit_reputation.app.models.resena import Empresa, Resena
-from crecebit_reputation.app.schemas.resena import EmpresaCreate, EmpresaResponse, ResenaCreate, ResenaResponse
+from app.models.resena import Resena
+from app.schemas.resena import ResenaCreate, ResenaResponse
+from app.models.empresa import Empresa
+
 
 router = APIRouter()
 
@@ -44,7 +46,7 @@ def obtener_resumen_competitivo(db: Session = Depends(get_db)):
         func.count(Resena.id).label("total_resenas"),
         func.avg(Resena.calificacion).label("promedio_estrellas"),
         # Opcional: Contar cuántas reseñas tienen respuesta del dueño
-        func.sum(func.case((Resena.respuesta_dueno != "", 1), else_=0)).label("respuestas_dueno")
+        func.sum(case((Resena.respuesta_dueno != "", 1), else_=0)).label("respuestas_dueno")
     ).outerjoin(Resena, Empresa.id == Resena.empresa_id).group_by(Empresa.id).all()
 
     # Formateamos los datos para que el JSON salga limpio

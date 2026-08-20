@@ -5,8 +5,8 @@ from sqlalchemy import func
 
 # Importamos la conexión a BD y nuestros modelos/esquemas actualizados
 from app.core.database import get_db
-from crecebit_reputation.app.models.empresa import Empresa
-from crecebit_reputation.app.schemas.empresa import EmpresaCreate, EmpresaResponse
+from app.models.empresa import Empresa
+from app.schemas.empresa import EmpresaCreate, EmpresaResponse
 
 router = APIRouter()
 
