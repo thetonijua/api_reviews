@@ -23,21 +23,3 @@ class ResenaResponse(ResenaBase):
     # Esto le dice a Pydantic que lea los datos desde SQLAlchemy (modo ORM)
     model_config = ConfigDict(from_attributes=True)
 
-# ==========================================
-# SCHEMAS PARA EMPRESAS
-# ==========================================
-
-class EmpresaBase(BaseModel):
-    nombre: str
-    sector: Optional[str] = None
-    es_cliente: bool = False
-
-class EmpresaCreate(EmpresaBase):
-    pass
-
-
-class EmpresaResponse(EmpresaBase):
-    id: int
-    resenas: List[ResenaResponse] = []
-
-    model_config = ConfigDict(from_attributes=True)
