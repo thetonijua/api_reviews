@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 
 
@@ -7,7 +7,7 @@ class ResenaBase(BaseModel):
     plataforma: str = "Google Maps"
     autor: Optional[str] = None
     es_local_guide: bool = False
-    calificacion: float
+    calificacion: float = Field(ge=1, le=5)
     fecha: str
     comentario: Optional[str] = None
     me_gusta:int = 0

@@ -5,7 +5,7 @@ from sqlalchemy import func, case
 
 # Importamos la conexión a BD y nuestros modelos/esquemas actualizados
 from app.core.database import get_db
-from app.models.resena import Resena
+from app.models.resena import Resena, calcular_hash
 from app.schemas.resena import ResenaCreate, ResenaResponse
 from app.models.empresa import Empresa
 
@@ -21,7 +21,11 @@ def crear_resena(resena: ResenaCreate, db: Session = Depends(get_db)):
     if not empresa_existe:
         raise HTTPException(status_code=404, detail="La empresa no existe en la base de datos")
     
-    nueva_resena = Resena(**resena.model_dump())
+    hash_unico = calcular_hash(resena.empresa_id, resena.plataforma, resena.autor, resena.comentario)
+    if db.query(Resena).filter(Resena.hash_unico == hash_unico).first():
+        raise HTTPException(status_code=409, detail="Esta reseña ya existe para la empresa")
+
+    nueva_resena = Resena(**resena.model_dump(), hash_unico=hash_unico)
     db.add(nueva_resena)
     db.commit()
     db.refresh(nueva_resena)

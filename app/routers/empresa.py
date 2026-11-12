@@ -13,6 +13,9 @@ router = APIRouter()
 
 @router.post("/empresas", response_model=EmpresaResponse, tags=["Empresas"])
 def crear_empresa(empresa: EmpresaCreate, db: Session = Depends(get_db)):
+    if db.query(Empresa).filter(Empresa.nombre == empresa.nombre).first():
+        raise HTTPException(status_code=409, detail="Ya existe una empresa con ese nombre")
+
     nueva_empresa = Empresa(**empresa.model_dump())
     db.add(nueva_empresa)
     db.commit()
