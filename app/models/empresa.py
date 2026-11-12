@@ -6,7 +6,7 @@ class Empresa(Base):
     __tablename__ = "empresas"
 
     id = Column(Integer, primary_key=True, index=True)
-    nombre = Column(String(150), index=True, nullable=False) # Ej: "Casino Enjoy Santa Cruz"
+    nombre = Column(String(150), index=True, unique=True, nullable=False) # Ej: "Casino Enjoy Santa Cruz"
     sector = Column(String(100), nullable=True)              # Ej: "Hotelería", "Gastronomía"
     es_cliente = Column(Boolean, default=False)              # True = Tu cliente, False = Competencia
     
