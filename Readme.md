@@ -72,7 +72,8 @@ Si en alguna reseña no se encuentra la nota o la fecha, el scraper guarda el HT
 
 **Etapa 2: Carga a la base de datos (ETL).** Crea las empresas que no existan y carga sus reseñas. Se puede ejecutar varias veces: las reseñas nuevas se agregan, las que ya están en la base se actualizan (respuesta del dueño, "me gusta" y fecha si viene más precisa) y las que no tienen una calificación válida se descartan.
 
-    python load_csv_bd.py
+    python load_csv_bd.py                     # carga resenas_benchmarking.csv
+    python load_csv_bd.py prueba_hotel.csv    # o cualquier otro archivo
 
 **Etapa 3: Levantar la API**
 

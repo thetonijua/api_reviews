@@ -156,4 +156,7 @@ def cargar_datos(ruta_csv: str = ARCHIVO_CSV):
 
 
 if __name__ == "__main__":
-    cargar_datos()
+    import sys
+
+    # Uso: python load_csv_bd.py [archivo.csv]   (por defecto: resenas_benchmarking.csv)
+    cargar_datos(sys.argv[1] if len(sys.argv) > 1 else ARCHIVO_CSV)
