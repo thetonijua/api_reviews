@@ -1,11 +1,12 @@
 import re
 import csv
+from datetime import datetime
 from playwright.sync_api import sync_playwright
 
 def extraer_resenas(empresas):
     with open('resenas_benchmarking.csv', mode='w', newline='', encoding='utf-8') as archivo:
         escritor = csv.writer(archivo)
-        escritor.writerow(['Empresa', 'Autor', 'Local_Guide', 'Estrellas', 'Fecha', 'Comentario', 'Me_Gusta', 'Respuesta_Dueno'])
+        escritor.writerow(['Empresa', 'Autor', 'Local_Guide', 'Estrellas', 'Fecha', 'Comentario', 'Me_Gusta', 'Respuesta_Dueno', 'Fecha_Extraccion'])
 
         with sync_playwright() as p:
             print("🤖 Iniciando robot...")
@@ -96,6 +97,7 @@ def extraer_resenas(empresas):
 
                 # --- FASE 2: LA EXTRACCIÓN ---
                 print(f"📥 Guardando datos de {nombre_local}...")
+                fecha_extraccion = datetime.now().isoformat(timespec="seconds")
                 tarjetas_finales = page.locator(selector_tarjetas).all()
                 
                 for tarjeta in tarjetas_finales[:meta_resenas]:
@@ -139,7 +141,7 @@ def extraer_resenas(empresas):
                         if texto_likes.isdigit():
                             me_gusta = int(texto_likes)
                             
-                    escritor.writerow([nombre_local, autor, es_local_guide, estrellas, fecha, comentario, me_gusta, respuesta_dueno])
+                    escritor.writerow([nombre_local, autor, es_local_guide, estrellas, fecha, comentario, me_gusta, respuesta_dueno, fecha_extraccion])
                     
                 print(f"✅ {nombre_local} procesado con éxito.")
                 context.close()
