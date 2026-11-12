@@ -1,71 +1,81 @@
-# Crece Bit - API de Reseñas de Google Maps 📊
+# CreceBit - API de Reseñas 📊
 
-Este proyecto es un sistema completo de extracción (Scraping), transformación (ETL) y exposición (API REST) de reseñas de clientes desde Google Maps. Está diseñado para recopilar datos de negocios de forma automatizada y servirlos a través de endpoints rápidos y documentados.
+Sistema de extracción (scraping), carga (ETL) y exposición (API REST) de reseñas de clientes, orientado a **análisis de reputación y benchmarking competitivo** para negocios turísticos (hoteles, viñas, restaurantes).
 
-## 🚀 Tecnologías Utilizadas
+Cada negocio se registra como `Empresa`, marcada como cliente (`es_cliente=True`) o competencia, y la API permite comparar su desempeño y analizar de qué hablan sus clientes.
 
-* **Backend / API:** [FastAPI](https://fastapi.tiangolo.com/) y Pydantic.
-* **Scraping:** [Playwright](https://playwright.dev/python/) (simulación de navegación humana).
-* **Base de Datos & ORM:** MySQL, SQLAlchemy y Python-dotenv.
-* **Lenguaje:** Python 3.x
+## 🚀 Tecnologías
 
-## 📁 Arquitectura del Proyecto
+* **API:** [FastAPI](https://fastapi.tiangolo.com/) y Pydantic
+* **Base de datos:** MySQL + SQLAlchemy (driver PyMySQL)
+* **NLP:** [spaCy](https://spacy.io/) con el modelo `es_core_news_sm`
+* **Scraping:** [Playwright](https://playwright.dev/python/)
+* **Lenguaje:** Python 3.12+
 
-El proyecto sigue una estructura modular para separar responsabilidades:
+## 📁 Estructura
 
     /
     ├── app/
-    │   ├── api/            # Configuraciones adicionales de la API
-    │   ├── core/           # Configuración central (ej. conexión a BD)
-    │   ├── models/         # Modelos de SQLAlchemy (Tablas BD)
-    │   ├── routers/        # Rutas y Endpoints de FastAPI
-    │   ├── schemas/        # Esquemas de Pydantic (Validación JSON)
-    │   ├── services/       # Lógica de negocio 
-    │   └── main.py         # Punto de entrada de FastAPI
-    ├── cargar_csv.py       # Script ETL para migrar datos a MySQL
-    ├── .env                # Variables de entorno (No versionado)
-    ├── .gitignore          # Archivos ignorados por Git
-    └── README.md           # Documentación del proyecto
+    │   ├── core/database.py   # Conexión a la base de datos
+    │   ├── models/            # Modelos SQLAlchemy (empresa, resena)
+    │   ├── schemas/           # Esquemas Pydantic (validación JSON)
+    │   ├── routers/           # Endpoints (empresas, reseñas, NLP)
+    │   └── main.py            # Punto de entrada de FastAPI
+    ├── scraper.py             # Extrae reseñas de Google Maps a CSV
+    ├── load_csv_bd.py         # Carga el CSV a la base de datos (ETL)
+    ├── requirements.txt
+    ├── Dockerfile
+    └── .env                   # Variables de entorno (no versionado)
 
-## ⚙️ Configuración e Instalación
+## ⚙️ Instalación
 
-**1. Clonar el repositorio y crear entorno virtual:**
-    
-    git clone https://github.com/TU-USUARIO/TU-REPOSITORIO.git
-    cd TU-REPOSITORIO
+**1. Clonar el repositorio y crear el entorno virtual**
+
+    git clone https://github.com/thetonijua/api_reviews.git
+    cd api_reviews
     python -m venv venv
-    source venv/Scripts/activate  # En Windows (Git Bash)
+    source venv/bin/activate          # Linux / macOS
+    source venv/Scripts/activate      # Windows (Git Bash)
 
-**2. Instalar dependencias:**
+**2. Instalar dependencias** (incluye el modelo de spaCy en español)
 
-    pip install fastapi uvicorn sqlalchemy pymysql pydantic python-dotenv playwright
-    playwright install chromium
+    pip install -r requirements.txt
+    playwright install chromium       # solo si vas a usar el scraper
 
-**3. Configurar Variables de Entorno:**
-Crea un archivo llamado `.env` en la carpeta `app/` (o en la raíz, dependiendo de tu configuración exacta) con tus credenciales de MySQL:
+**3. Configurar variables de entorno**
+
+Crea un archivo `.env` en la raíz del proyecto:
 
     SQLALCHEMY_DATABASE_URL=mysql+pymysql://usuario:password@localhost:3306/tu_base_de_datos
 
-## 🔄 Flujo de Uso
+## 🔄 Flujo de uso
 
-El sistema funciona en 3 etapas principales:
+**Etapa 1: Extracción (scraping).** Edita la lista de negocios al final de `scraper.py` y ejecútalo. Genera `resenas_benchmarking.csv`.
 
-### Etapa 1: Extracción de Datos (Scraping)
-Ejecuta el script de Playwright para navegar por Google Maps, evitar bloqueos de bots y descargar las reseñas a un archivo `resenas_casino.csv`.
+    python scraper.py
 
-### Etapa 2: Carga a la Base de Datos (ETL)
-Migra los datos del archivo CSV directamente a tu tabla MySQL transformando los tipos de datos correspondientes (ej. calificaciones a formato `Float`).
+**Etapa 2: Carga a la base de datos (ETL).** Crea las empresas que no existan y carga sus reseñas.
 
-    python cargar_csv.py
+    python load_csv_bd.py
 
-### Etapa 3: Iniciar la API REST
-Levanta el servidor local con recarga automática:
+**Etapa 3: Levantar la API**
 
     uvicorn app.main:app --reload
 
-## 🌐 Endpoints Disponibles
+Documentación interactiva (Swagger UI): **http://localhost:8000/docs**
 
-Una vez iniciada la API, puedes acceder a la documentación interactiva (Swagger UI) generada automáticamente ingresando a:
-👉 **`http://localhost:8000/docs`**
+## 🐳 Docker
 
-* **`GET /resenas`**: Obtiene el listado de reseñas procesadas. Soporta paginación mediante los parámetros `skip` y `limit`.
+    docker build -t crecebit-api .
+    docker run -p 8000:8000 -e SQLALCHEMY_DATABASE_URL=mysql+pymysql://usuario:password@host:3306/base crecebit-api
+
+## 🌐 Endpoints
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/empresas` | Lista las empresas con sus reseñas |
+| `POST` | `/empresas` | Crea una empresa |
+| `GET` | `/resenas` | Lista reseñas (paginación con `skip` y `limit`) |
+| `POST` | `/resenas` | Crea una reseña para una empresa existente |
+| `GET` | `/benchmarking` | Compara empresas: total de reseñas, promedio de estrellas y tasa de respuesta del dueño |
+| `GET` | `/nlp/conceptos/{nombre_empresa}` | Los 10 conceptos (sustantivos y adjetivos) más mencionados en las reseñas de una empresa |
