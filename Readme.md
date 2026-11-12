@@ -60,9 +60,15 @@ Ejecuta las migraciones en orden (cada una se puede repetir sin problema):
 
 ## 🔄 Flujo de uso
 
-**Etapa 1: Extracción (scraping).** Edita la lista de negocios al final de `scraper.py` y ejecútalo. Genera `resenas_benchmarking.csv`.
+**Etapa 1: Extracción (scraping).** Sin argumentos, usa la lista de negocios definida al final de `scraper.py` y genera `resenas_benchmarking.csv`.
 
     python scraper.py
+
+También puedes indicar los negocios, la cantidad de reseñas y el archivo de salida (útil para pruebas):
+
+    python scraper.py "Hotel Vendimia Santa Cruz" --max 20 --salida prueba_hotel.csv
+
+Si en alguna reseña no se encuentra la nota o la fecha, el scraper guarda el HTML de esa tarjeta en `diagnostico_scraper/` para poder revisarla.
 
 **Etapa 2: Carga a la base de datos (ETL).** Crea las empresas que no existan y carga sus reseñas. Se puede ejecutar varias veces: las reseñas nuevas se agregan, las que ya están en la base se actualizan (respuesta del dueño, "me gusta" y fecha si viene más precisa) y las que no tienen una calificación válida se descartan.
 
