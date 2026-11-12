@@ -1,6 +1,7 @@
 import csv
 from app.core.database import SessionLocal
-from crecebit_reputation.app.models.resena import Empresa, Resena
+from app.models.empresa import Empresa
+from app.models.resena import Resena
 
 def cargar_datos():
    
