@@ -21,7 +21,8 @@ _UNIDADES = {
     "año": "anio", "años": "anio", "ano": "anio", "anos": "anio",
 }
 
-_PATRON = re.compile(r"hace\s+(un|una|\d+)\s+(\w+)", re.IGNORECASE)
+# "hace 2 meses", "Editado hace un año" o "4 semanas atrás"
+_PATRON = re.compile(r"hace\s+(un|una|\d+)\s+(\w+)|(un|una|\d+)\s+(\w+)\s+atr[áa]s", re.IGNORECASE)
 
 
 def _restar_meses(d: date, meses: int) -> date:
@@ -44,8 +45,9 @@ def estimar_fecha(texto: str | None, referencia: datetime | date) -> tuple[date 
     if not m:
         return None, None
 
-    cantidad = 1 if m.group(1).lower() in ("un", "una") else int(m.group(1))
-    unidad = m.group(2).lower()
+    numero, unidad = (m.group(1), m.group(2)) if m.group(1) else (m.group(3), m.group(4))
+    cantidad = 1 if numero.lower() in ("un", "una") else int(numero)
+    unidad = unidad.lower()
     precision = _UNIDADES.get(unidad)
     if precision is None:
         return None, None
