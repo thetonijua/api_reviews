@@ -48,13 +48,19 @@ Crea un archivo `.env` en la raíz del proyecto:
 
     SQLALCHEMY_DATABASE_URL=mysql+pymysql://usuario:password@localhost:3306/tu_base_de_datos
 
+**4. Si ya tenías una base de datos creada con una versión anterior**
+
+Ejecuta una vez la migración, que agrega la detección de duplicados, elimina las reseñas repetidas y las que no tienen calificación válida:
+
+    python -m scripts.migrar_001_deduplicar
+
 ## 🔄 Flujo de uso
 
 **Etapa 1: Extracción (scraping).** Edita la lista de negocios al final de `scraper.py` y ejecútalo. Genera `resenas_benchmarking.csv`.
 
     python scraper.py
 
-**Etapa 2: Carga a la base de datos (ETL).** Crea las empresas que no existan y carga sus reseñas.
+**Etapa 2: Carga a la base de datos (ETL).** Crea las empresas que no existan y carga sus reseñas. Se puede ejecutar varias veces: las reseñas que ya están en la base se omiten y las que no tienen una calificación válida se descartan.
 
     python load_csv_bd.py
 
