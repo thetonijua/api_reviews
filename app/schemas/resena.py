@@ -1,4 +1,5 @@
 from pydantic import BaseModel, ConfigDict, Field
+from datetime import date, datetime
 from typing import Optional, List
 
 
@@ -19,6 +20,9 @@ class ResenaCreate(ResenaBase):
 class ResenaResponse(ResenaBase):
     id: int
     empresa_id: int
+    fecha_estimada: Optional[date] = None
+    precision_fecha: Optional[str] = None
+    fecha_extraccion: Optional[datetime] = None
 
     # Esto le dice a Pydantic que lea los datos desde SQLAlchemy (modo ORM)
     model_config = ConfigDict(from_attributes=True)
