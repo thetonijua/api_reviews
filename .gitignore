@@ -12,3 +12,5 @@ __pycache__/
 resenas_casino.csv
 
 .env
+# HTML de tarjetas que el scraper no pudo leer (puede contener datos personales)
+diagnostico_scraper/
