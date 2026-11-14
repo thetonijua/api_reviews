@@ -28,8 +28,11 @@ JS_NOTA_Y_FECHA = r"""
     let estrellas = null, sobre5 = null, fecha = null;
     for (const el of tarjeta.querySelectorAll('*')) {
         const aria = limpiar(el.getAttribute('aria-label'));
-        const esHoja = el.children.length === 0;
-        const texto = esHoja ? limpiar(el.textContent) : '';
+        // Texto completo del elemento, aunque venga dividido en varios <span>
+        // (ej: "Hace 3 semanas <span>en Google</span>"). Solo textos cortos, para no
+        // tomar contenedores grandes ni comentarios.
+        const textoCompleto = limpiar(el.textContent);
+        const texto = textoCompleto.length <= 60 ? textoCompleto : '';
 
         if (!estrellas) {
             const m = aria.match(reEstrellas);
@@ -40,7 +43,7 @@ JS_NOTA_Y_FECHA = r"""
             if (m) sobre5 = m[1];
         }
         // Texto corto: evita confundir la fecha con un comentario que empieza con "Hace..."
-        if (!fecha && texto && texto.length <= 60 && reFecha.test(texto)) {
+        if (!fecha && texto && reFecha.test(texto)) {
             fecha = texto;
         }
     }
@@ -179,10 +182,14 @@ def extraer_resenas(empresas: list[str], meta_resenas: int = 100, salida: str = 
 
                 # --- EXPANDIR TEXTOS LARGOS ---
                 print("🔍 Abriendo botones de 'Ver más' para extraer textos completos...")
-                for btn in page.locator('button.w8nwRe.kyuRq').all():
+                # Por clase (fichas comunes) o por su nombre accesible "Ver más" / "Más" (fichas de hoteles)
+                botones_ver_mas = page.locator('button.w8nwRe.kyuRq').all() + page.get_by_role(
+                    "button", name=re.compile(r"^(Ver más|Más)$", re.IGNORECASE)).all()
+                for btn in botones_ver_mas:
                     try:
                         if btn.is_visible():
                             btn.click()
+                            page.wait_for_timeout(100)
                     except Exception:
                         pass
 
