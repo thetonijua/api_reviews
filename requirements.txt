@@ -13,5 +13,8 @@ cryptography==44.0.0
 spacy==3.8.7
 es_core_news_sm @ https://github.com/explosion/spacy-models/releases/download/es_core_news_sm-3.8.0/es_core_news_sm-3.8.0-py3-none-any.whl
 
+# Informes PDF
+reportlab==5.1.0
+
 # Scraper
 playwright==1.62.0

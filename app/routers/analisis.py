@@ -1,13 +1,14 @@
 from collections import defaultdict
 from datetime import date
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from sqlalchemy import case, func
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.models.empresa import Empresa
 from app.models.resena import Resena
+from app.services.diagnostico import generar_pdf, recolectar_datos
 from app.schemas.analisis import BenchmarkingResponse, TendenciaMensual, TendenciaResponse
 
 router = APIRouter(tags=["Análisis"])
@@ -95,4 +96,27 @@ def obtener_tendencias(
         resenas_incluidas=sum(m.total_resenas for m in meses),
         resenas_excluidas=excluidas,
         meses=meses,
+    )
+
+
+@router.get(
+    "/empresas/{empresa_id}/diagnostico",
+    response_class=Response,
+    responses={200: {"content": {"application/pdf": {}}, "description": "Diagnóstico en PDF"}},
+)
+def descargar_diagnostico(
+    empresa_id: int,
+    competidores: list[int] | None = Query(None, description="IDs de los competidores (por defecto, todas las demás empresas)"),
+    db: Session = Depends(get_db),
+):
+    """Diagnóstico de reputación en PDF: comparación con la competencia, temas y recomendaciones."""
+    try:
+        datos = recolectar_datos(db, empresa_id, competidores)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    nombre_archivo = "diagnostico_" + "".join(c if c.isalnum() else "_" for c in datos["cliente"]["nombre"]) + ".pdf"
+    return Response(
+        content=generar_pdf(datos),
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{nombre_archivo}"'},
     )
