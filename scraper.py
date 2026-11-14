@@ -102,7 +102,7 @@ def extraer_tarjeta(tarjeta) -> dict:
 
 
 def extraer_resenas(empresas: list[str], meta_resenas: int = 100, salida: str = "resenas_benchmarking.csv",
-                    headless: bool = False):
+                    headless: bool = False, diagnostico: bool = False):
     with open(salida, mode='w', newline='', encoding='utf-8') as archivo:
         escritor = csv.DictWriter(archivo, fieldnames=COLUMNAS)
         escritor.writeheader()
@@ -202,9 +202,11 @@ def extraer_resenas(empresas: list[str], meta_resenas: int = 100, salida: str = 
 
                 for tarjeta in tarjetas_finales:
                     fila = extraer_tarjeta(tarjeta)
-                    if fila["Estrellas"] == "Sin estrellas" or fila["Fecha"] == "Sin fecha":
-                        sin_nota += fila["Estrellas"] == "Sin estrellas"
-                        sin_fecha += fila["Fecha"] == "Sin fecha"
+                    falta_nota = fila["Estrellas"] == "Sin estrellas"
+                    falta_fecha = fila["Fecha"] == "Sin fecha"
+                    sin_nota += falta_nota
+                    sin_fecha += falta_fecha
+                    if diagnostico or falta_nota or falta_fecha:
                         guardar_diagnostico(tarjeta, nombre_local, diagnosticos)
                     escritor.writerow({"Empresa": nombre_local, **fila, "Fecha_Extraccion": fecha_extraccion})
 
@@ -231,6 +233,9 @@ if __name__ == "__main__":
     parser.add_argument("--max", type=int, default=100, help="Cantidad máxima de reseñas por negocio.")
     parser.add_argument("--salida", default="resenas_benchmarking.csv", help="Archivo CSV de salida.")
     parser.add_argument("--headless", action="store_true", help="Ejecutar sin abrir la ventana del navegador.")
+    parser.add_argument("--diagnostico", action="store_true",
+                        help=f"Guardar el HTML de las primeras {MAX_ARCHIVOS_DIAGNOSTICO} tarjetas en '{CARPETA_DIAGNOSTICO}/', aunque no tengan errores.")
     args = parser.parse_args()
 
-    extraer_resenas(args.empresas, meta_resenas=args.max, salida=args.salida, headless=args.headless)
+    extraer_resenas(args.empresas, meta_resenas=args.max, salida=args.salida, headless=args.headless,
+                    diagnostico=args.diagnostico)
