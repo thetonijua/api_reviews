@@ -1,5 +1,6 @@
 import csv
 import os
+import re
 from datetime import datetime
 
 from app.core.database import Base, SessionLocal, engine
@@ -8,7 +9,20 @@ from app.models.resena import Resena, calcular_hash
 from app.services.fechas import es_mas_precisa, estimar_fecha
 
 ARCHIVO_CSV = "resenas_benchmarking.csv"
-PLATAFORMA = "Google Maps"
+PLATAFORMA_POR_DEFECTO = "Google Maps"
+
+# En las fichas de hoteles, Google indica el origen de la reseña junto a la fecha:
+# "Hace un mes en Google", "Hace un mes en Tripadvisor"
+_PATRON_PLATAFORMA = re.compile(r"\ben\s+(\S.*)$", re.IGNORECASE)
+_NOMBRES_PLATAFORMA = {"google": "Google Maps", "tripadvisor": "Tripadvisor", "booking.com": "Booking", "booking": "Booking"}
+
+
+def detectar_plataforma(fecha: str) -> str:
+    m = _PATRON_PLATAFORMA.search(fecha or "")
+    if not m:
+        return PLATAFORMA_POR_DEFECTO
+    origen = m.group(1).strip()
+    return _NOMBRES_PLATAFORMA.get(origen.lower(), origen[:50])
 
 
 def parsear_calificacion(texto: str) -> float | None:
@@ -104,7 +118,8 @@ def cargar_datos(ruta_csv: str = ARCHIVO_CSV):
                 if fecha_estimada is None:
                     sin_fecha += 1  # se guarda igual, pero sin fecha estimada
 
-                hash_unico = calcular_hash(empresa_db.id, PLATAFORMA, fila["Autor"], fila["Comentario"])
+                plataforma = detectar_plataforma(fila["Fecha"])
+                hash_unico = calcular_hash(empresa_db.id, plataforma, fila["Autor"], fila["Comentario"])
 
                 # Repetida dentro del mismo CSV
                 if hash_unico in hashes_procesados:
@@ -123,7 +138,7 @@ def cargar_datos(ruta_csv: str = ARCHIVO_CSV):
 
                 db.add(Resena(
                     empresa_id=empresa_db.id,
-                    plataforma=PLATAFORMA,
+                    plataforma=plataforma,
                     autor=fila["Autor"],
                     es_local_guide=fila["Local_Guide"] == "True",
                     calificacion=calificacion,
