@@ -38,7 +38,8 @@ def main():
             datos = recolectar_datos(db, cliente.id, ids_comp)
         except ValueError as e:
             raise SystemExit(f"❌ {e}")
-        salida = args.salida or f"diagnostico_{re.sub(r'[^\w]+', '_', cliente.nombre).strip('_')}.pdf"
+        nombre_archivo = re.sub(r"[^\w]+", "_", cliente.nombre).strip("_")
+        salida = args.salida or f"diagnostico_{nombre_archivo}.pdf"
         with open(salida, "wb") as f:
             f.write(generar_pdf(datos))
         print(f"✅ Diagnóstico generado: {salida}")
