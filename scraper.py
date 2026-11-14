@@ -27,6 +27,7 @@ JS_NOTA_Y_FECHA = r"""
 
     let estrellas = null, sobre5 = null, fecha = null;
     for (const el of tarjeta.querySelectorAll('*')) {
+        if (el.closest('.CDe7pd')) continue;  // bloque de respuesta del dueño
         const aria = limpiar(el.getAttribute('aria-label'));
         // Texto completo del elemento, aunque venga dividido en varios <span>
         // (ej: "Hace 3 semanas <span>en Google</span>"). Solo textos cortos, para no
@@ -78,9 +79,18 @@ def extraer_tarjeta(tarjeta) -> dict:
     nota_fecha = tarjeta.evaluate(JS_NOTA_Y_FECHA)
 
     # --- Comentario y respuesta del dueño ---
-    textos_loc = tarjeta.locator(".wiI7pd").all()
-    comentario = limpiar_saltos(textos_loc[0].inner_text()) if textos_loc else "[Sin texto]"
-    respuesta_dueno = limpiar_saltos(textos_loc[1].inner_text()) if len(textos_loc) > 1 else ""
+    # La respuesta del dueño está en su propio bloque (.CDe7pd); el comentario es el texto
+    # que queda fuera de ese bloque. Así una reseña sin comentario no toma la respuesta como comentario.
+    textos = tarjeta.evaluate("""(t) => {
+        const respuesta = t.querySelector('.CDe7pd .wiI7pd');
+        const comentario = [...t.querySelectorAll('.wiI7pd')].find(el => !el.closest('.CDe7pd'));
+        return {
+            comentario: comentario ? comentario.innerText : null,
+            respuesta: respuesta ? respuesta.innerText : null,
+        };
+    }""")
+    comentario = limpiar_saltos(textos["comentario"]) if textos["comentario"] else "[Sin texto]"
+    respuesta_dueno = limpiar_saltos(textos["respuesta"]) if textos["respuesta"] else ""
 
     likes_loc = tarjeta.locator(".pkWtMe")
     me_gusta = 0
@@ -99,6 +109,24 @@ def extraer_tarjeta(tarjeta) -> dict:
         "Me_Gusta": me_gusta,
         "Respuesta_Dueno": respuesta_dueno,
     }
+
+
+def expandir_textos(page):
+    """Abre los botones "Ver más" para obtener el texto completo de las reseñas."""
+    # Solo los botones que aún no se abrieron (aria-expanded="false")
+    botones_ver_mas = page.locator(
+        'button.w8nwRe.kyuRq[aria-expanded="false"], button[aria-label="Ver más"][aria-expanded="false"]').all()
+    for btn in botones_ver_mas:
+        try:
+            # Clic normal; si la ventana de "iniciar sesión" lo tapa, se activa el botón
+            # directamente. Solo expande el texto de una reseña que ya está en pantalla.
+            try:
+                btn.click(timeout=2000)
+            except Exception:
+                btn.evaluate("b => b.click()")
+            page.wait_for_timeout(150)
+        except Exception:
+            pass
 
 
 def extraer_resenas(empresas: list[str], meta_resenas: int = 100, salida: str = "resenas_benchmarking.csv",
@@ -182,16 +210,7 @@ def extraer_resenas(empresas: list[str], meta_resenas: int = 100, salida: str = 
 
                 # --- EXPANDIR TEXTOS LARGOS ---
                 print("🔍 Abriendo botones de 'Ver más' para extraer textos completos...")
-                # Por clase (fichas comunes) o por su nombre accesible "Ver más" / "Más" (fichas de hoteles)
-                botones_ver_mas = page.locator('button.w8nwRe.kyuRq').all() + page.get_by_role(
-                    "button", name=re.compile(r"^(Ver más|Más)$", re.IGNORECASE)).all()
-                for btn in botones_ver_mas:
-                    try:
-                        if btn.is_visible():
-                            btn.click()
-                            page.wait_for_timeout(100)
-                    except Exception:
-                        pass
+                expandir_textos(page)
 
                 # --- FASE 2: EXTRACCIÓN ---
                 print(f"📥 Guardando datos de {nombre_local}...")
