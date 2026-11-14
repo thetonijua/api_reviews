@@ -113,20 +113,28 @@ def extraer_tarjeta(tarjeta) -> dict:
 
 def expandir_textos(page):
     """Abre los botones "Ver más" para obtener el texto completo de las reseñas."""
-    # Solo los botones que aún no se abrieron (aria-expanded="false")
-    botones_ver_mas = page.locator(
-        'button.w8nwRe.kyuRq[aria-expanded="false"], button[aria-label="Ver más"][aria-expanded="false"]').all()
-    for btn in botones_ver_mas:
+    # query_selector_all entrega referencias fijas a cada botón. (Un locator se vuelve a
+    # evaluar en cada uso: al abrir un botón la lista se achica y Playwright se quedaba
+    # esperando 30 segundos por posiciones que ya no existían.)
+    botones = page.query_selector_all(
+        'button.w8nwRe.kyuRq[aria-expanded="false"], button[aria-label="Ver más"][aria-expanded="false"]')
+    print(f"   {len(botones)} textos largos por abrir...")
+    clic_bloqueado = False
+    for btn in botones:
         try:
             # Clic normal; si la ventana de "iniciar sesión" lo tapa, se activa el botón
-            # directamente. Solo expande el texto de una reseña que ya está en pantalla.
-            try:
-                btn.click(timeout=2000)
-            except Exception:
+            # directamente (y se hace así con el resto, para no esperar en cada uno).
+            # Solo expande el texto de una reseña que ya está en pantalla.
+            if not clic_bloqueado:
+                try:
+                    btn.click(timeout=2000)
+                except Exception:
+                    clic_bloqueado = True
+            if clic_bloqueado:
                 btn.evaluate("b => b.click()")
             page.wait_for_timeout(150)
         except Exception:
-            pass
+            pass  # el botón ya no existe (la tarjeta se volvió a dibujar)
 
 
 def extraer_resenas(empresas: list[str], meta_resenas: int = 100, salida: str = "resenas_benchmarking.csv",
