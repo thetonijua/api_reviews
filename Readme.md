@@ -81,6 +81,13 @@ Si en alguna reseña no se encuentra la nota o la fecha, el scraper guarda el HT
 
 Documentación interactiva (Swagger UI): **http://localhost:8000/docs**
 
+**Etapa 4: Diagnóstico en PDF.** Genera un informe de una página para entregar al dueño del negocio: comparación con la competencia, temas que más elogian y critican sus clientes, citas anónimas, evolución reciente y recomendaciones.
+
+    python generar_diagnostico.py --cliente "Hotel Vendimia Santa Cruz"
+    python generar_diagnostico.py --cliente "Hotel Vendimia Santa Cruz" --competidores "Hotel Santa Cruz Plaza" "Casino Colchagua Santa Cruz"
+
+Sin `--competidores`, compara con todas las demás empresas de la base de datos. El informe no incluye nombres de autores y advierte cuando un negocio tiene menos de 20 reseñas analizadas.
+
 ## 📅 Fechas de las reseñas
 
 Google Maps no muestra la fecha exacta de una reseña, sino el tiempo transcurrido ("hace 2 meses"). A partir de ese texto y de la fecha en que se hizo el scraping, se calcula una **fecha estimada** y su **precisión**:
@@ -109,4 +116,5 @@ Las tendencias mensuales solo usan reseñas con precisión de día, semana o mes
 | `POST` | `/resenas` | Crea una reseña para una empresa existente |
 | `GET` | `/benchmarking` | Compara empresas: total de reseñas, promedio de estrellas y tasa de respuesta del dueño |
 | `GET` | `/empresas/{empresa_id}/tendencias` | Reseñas y promedio de estrellas por mes (filtros opcionales `desde` y `hasta`) |
+| `GET` | `/empresas/{empresa_id}/diagnostico` | Descarga el diagnóstico en PDF (parámetro opcional `competidores` con IDs, repetible) |
 | `GET` | `/nlp/conceptos/{nombre_empresa}` | Los 10 conceptos (sustantivos y adjetivos) más mencionados en las reseñas de una empresa |
